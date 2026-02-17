@@ -437,11 +437,11 @@ export default function Dashboard({
                   {tileStats.total.toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-lg border border-[var(--border)] bg-[var(--accent)] p-2.5 text-white">
-                <p className="text-[10px] uppercase tracking-wide text-white/80">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/5 p-2.5">
+                <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
                   Total flight time
                 </p>
-                <p className="text-lg font-semibold mt-0.5 tabular-nums">
+                <p className="text-lg font-semibold text-[var(--foreground)] mt-0.5 tabular-nums">
                   {Math.round(tileStats.totalMinutes / 60)}h
                 </p>
               </div>
@@ -468,13 +468,13 @@ export default function Dashboard({
                         key={r}
                         type="button"
                         onClick={() => toggleReason(r)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors border ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
                           selected
-                            ? "bg-[var(--accent)] text-white border-[var(--accent)] hover:opacity-90"
-                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] hover:bg-[var(--border)]/30"
                         }`}
                       >
-                        {r} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {r} <span className="rounded-lg px-1 py-0 ml-1 bg-[var(--border)]/50 dark:bg-white/10 tabular-nums text-[var(--foreground)]">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -482,7 +482,7 @@ export default function Dashboard({
                     <button
                       type="button"
                       onClick={() => setExpandReasons((e) => !e)}
-                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 hover:bg-[var(--border)]/30 transition-colors"
                     >
                       {expandReasons ? "Less" : `+${allReasonsFiltered.length - TOP_N} more`}
                     </button>
@@ -502,13 +502,13 @@ export default function Dashboard({
                         key={n}
                         type="button"
                         onClick={() => toggleNeighborhood(n)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors border ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
                           selected
-                            ? "bg-[var(--accent)] text-white border-[var(--accent)] hover:opacity-90"
-                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] hover:bg-[var(--border)]/30"
                         }`}
                       >
-                        {n} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {n} <span className="rounded-lg px-1 py-0 ml-1 bg-[var(--border)]/50 dark:bg-white/10 tabular-nums text-[var(--foreground)]">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -516,7 +516,7 @@ export default function Dashboard({
                     <button
                       type="button"
                       onClick={() => setExpandNeighborhoods((e) => !e)}
-                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 hover:bg-[var(--border)]/30 transition-colors"
                     >
                       {expandNeighborhoods ? "Less" : `+${allNeighborhoodsWithCount.length - TOP_N} more`}
                     </button>
@@ -541,13 +541,13 @@ export default function Dashboard({
                         key={d}
                         type="button"
                         onClick={() => toggleDistrict(d)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors border ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
                           selected
-                            ? "bg-[var(--accent)] text-white border-[var(--accent)] hover:opacity-90"
-                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] hover:bg-[var(--border)]/30"
                         }`}
                       >
-                        {label} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {label} <span className="rounded-lg px-1 py-0 ml-1 bg-[var(--border)]/50 dark:bg-white/10 tabular-nums text-[var(--foreground)]">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -555,7 +555,7 @@ export default function Dashboard({
                     <button
                       type="button"
                       onClick={() => setExpandDistricts((e) => !e)}
-                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 hover:bg-[var(--border)]/30 transition-colors"
                     >
                       {expandDistricts ? "Less" : `+${allDistrictsWithCount.length - TOP_N} more`}
                     </button>
@@ -575,13 +575,13 @@ export default function Dashboard({
                         key={id}
                         type="button"
                         onClick={() => toggleDuration(id)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors border ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
                           selected
-                            ? "bg-[var(--accent)] text-white border-[var(--accent)] hover:opacity-90"
-                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] hover:bg-[var(--border)]/30"
                         }`}
                       >
-                        {label} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {label} <span className="rounded-lg px-1 py-0 ml-1 bg-[var(--border)]/50 dark:bg-white/10 tabular-nums text-[var(--foreground)]">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -589,7 +589,7 @@ export default function Dashboard({
                     <button
                       type="button"
                       onClick={() => setExpandDurations((e) => !e)}
-                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 hover:bg-[var(--border)]/30 transition-colors"
                     >
                       {expandDurations ? "Less" : `+${allDurationsWithCount.length - TOP_N} more`}
                     </button>
