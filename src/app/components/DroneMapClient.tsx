@@ -10,9 +10,15 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import type { DroneFlightWithCoords } from "@/lib/sfpd-flights";
-import { BAY_AREA_BBOX, SF_COUNTY_BBOX } from "@/lib/sf-bounds";
+import { SF_COUNTY_BBOX } from "@/lib/sf-bounds";
 import "leaflet/dist/leaflet.css";
 import "@/app/components/map-minimal.css";
+
+// Load heat plugin (expects L on window)
+if (typeof window !== "undefined") {
+  (window as unknown as { L: typeof L }).L = L;
+  require("leaflet.heat");
+}
 
 const SF_BOUNDARY_API =
   "https://data.sfgov.org/resource/wamw-vt4s.json?county=San%20Francisco&$limit=1&$select=the_geom";
@@ -53,7 +59,7 @@ function formatDate(iso: string): string {
   }
 }
 
-/** Fit SF bounds so SF appears in the right-hand center (left padding for overlay panel). */
+/** Fit SF bounds with even padding so the map is centered on SF; extra bottom padding so the bottom-left filter panel doesn’t cover the city. */
 function FitBoundsToSF({ padding = 56 }: { padding?: number }) {
   const map = useMap();
   const bounds = useMemo(
@@ -67,10 +73,13 @@ function FitBoundsToSF({ padding = 56 }: { padding?: number }) {
   const applyFit = useCallback(() => {
     const container = map.getContainer();
     const w = container?.offsetWidth ?? 0;
-    const leftPadding = w > 0 ? Math.floor(w / 2) : padding;
+    const h = container?.offsetHeight ?? 0;
+    const leftPadding =
+      16 + Math.min(380, Math.max(0, w - 32));
+    const bottomPadding = h > 0 ? Math.min(420, Math.floor(h * 0.5)) : 360;
     map.fitBounds(bounds, {
       paddingTopLeft: [leftPadding, padding],
-      paddingBottomRight: [padding, padding],
+      paddingBottomRight: [padding, bottomPadding],
       maxZoom: 13,
     });
   }, [map, bounds, padding]);
@@ -145,23 +154,69 @@ function MapFadeMask({ boundaryRing }: { boundaryRing: [number, number][] | null
   return null;
 }
 
+/** Heat map layer: [lat, lng, intensity]. Intensity can be duration (minutes) for weighted heat. */
+function MapHeatLayer({
+  flights,
+  radius = 28,
+  blur = 20,
+}: {
+  flights: DroneFlightWithCoords[];
+  radius?: number;
+  blur?: number;
+}) {
+  const map = useMap();
+  const heatRef = useRef<ReturnType<typeof L.heatLayer> | null>(null);
+
+  const heatData = useMemo(() => {
+    return flights.map((f) => {
+      const lat = f.point.coordinates[1];
+      const lng = f.point.coordinates[0];
+      const minutes = Number(f.flight_duration_minutes) || 0;
+      const intensity = minutes > 0 ? Math.min(1, 0.2 + minutes / 60) : 0.5;
+      return [lat, lng, intensity] as [number, number, number];
+    });
+  }, [flights]);
+
+  useEffect(() => {
+    if (!("heatLayer" in L)) return;
+    const heat = (L as unknown as { heatLayer: (latlngs: [number, number, number][], o?: object) => { addTo: (m: L.Map) => void; remove: () => void } }).heatLayer(
+      heatData,
+      {
+        radius,
+        blur,
+        max: 1,
+        minOpacity: 0.35,
+        gradient: {
+          0.25: "rgba(59, 130, 246, 0.5)",
+          0.5: "rgba(34, 197, 94, 0.6)",
+          0.75: "rgba(234, 179, 8, 0.7)",
+          1: "rgba(239, 68, 68, 0.9)",
+        },
+      }
+    );
+    heat.addTo(map);
+    heatRef.current = heat as unknown as ReturnType<typeof L.heatLayer>;
+    return () => {
+      heatRef.current?.remove();
+      heatRef.current = null;
+    };
+  }, [map, radius, blur, heatData]);
+
+  return null;
+}
+
+export type MapViewMode = "dots" | "heatmap";
+
 export default function DroneMapClient({
   flights,
   overlayContainerRef,
+  mapViewMode = "dots",
 }: {
   flights: DroneFlightWithCoords[];
   overlayContainerRef?: React.RefObject<HTMLElement | null>;
+  mapViewMode?: MapViewMode;
 }) {
   const center: [number, number] = [37.7749, -122.4194];
-
-  const maxBounds = useMemo(
-    () =>
-      L.latLngBounds(
-        [BAY_AREA_BBOX.south, BAY_AREA_BBOX.west],
-        [BAY_AREA_BBOX.north, BAY_AREA_BBOX.east]
-      ),
-    []
-  );
 
   const [sfBoundaryRing, setSfBoundaryRing] = useState<[number, number][] | null>(null);
 
@@ -186,8 +241,6 @@ export default function DroneMapClient({
       zoom={12}
       className="minimal-map h-full w-full min-h-[400px] relative z-[1]"
       scrollWheelZoom
-      maxBounds={maxBounds}
-      maxBoundsViscosity={1}
     >
       {sfBoundaryRing && <MapFadeMask boundaryRing={sfBoundaryRing} />}
       <TileLayer
@@ -195,33 +248,37 @@ export default function DroneMapClient({
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
       />
       <FitBoundsToSF />
-      {flights.map((flight, i) => (
-        <Marker
-          key={`${flight.date}-${flight.case_cad_event_number}-${i}`}
-          position={[
-            flight.point.coordinates[1],
-            flight.point.coordinates[0],
-          ]}
-          icon={dotIcon}
-        >
-          <Popup className="minimal-popup">
-            <div className="popup-inner">
-              <p className="popup-location">
-                {flight.location || "Unknown location"}
-              </p>
-              <p className="popup-meta">
-                {formatDate(flight.date)} · {flight.flight_duration_minutes} min
-              </p>
-              <p className="popup-reason">{flight.reason_for_flight}</p>
-              {flight.analysis_neighborhood && (
-                <p className="popup-neighborhood">
-                  {flight.analysis_neighborhood}
+      {mapViewMode === "heatmap" ? (
+        <MapHeatLayer flights={flights} />
+      ) : (
+        flights.map((flight, i) => (
+          <Marker
+            key={`${flight.date}-${flight.case_cad_event_number}-${i}`}
+            position={[
+              flight.point.coordinates[1],
+              flight.point.coordinates[0],
+            ]}
+            icon={dotIcon}
+          >
+            <Popup className="minimal-popup">
+              <div className="popup-inner">
+                <p className="popup-location">
+                  {flight.location || "Unknown location"}
                 </p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+                <p className="popup-meta">
+                  {formatDate(flight.date)} · {flight.flight_duration_minutes} min
+                </p>
+                <p className="popup-reason">{flight.reason_for_flight}</p>
+                {flight.analysis_neighborhood && (
+                  <p className="popup-neighborhood">
+                    {flight.analysis_neighborhood}
+                  </p>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))
+      )}
     </MapContainer>
   );
 }

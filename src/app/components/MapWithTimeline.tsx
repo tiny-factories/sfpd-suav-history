@@ -59,11 +59,15 @@ export default function MapWithTimeline({
     setPlaybackTs((prev) => Math.max(rangeStartTs, Math.min(rangeEndTs, prev)));
   }, [rangeStartTs, rangeEndTs, minTs, maxTs]);
 
-  // Only show flights on the current playback date (single frame, not cumulative) from mapFlights
+  const [showAllPoints, setShowAllPoints] = useState(false);
+  const [mapViewMode, setMapViewMode] = useState<"dots" | "heatmap">("dots");
+
+  // When showAllPoints: show every mapFlight. Otherwise: only flights on the current playback date.
   const visibleFlights = useMemo(() => {
+    if (showAllPoints) return mapFlights;
     const playbackDay = dayStart(playbackTs);
     return mapFlights.filter((f) => dayStart(new Date(f.date).getTime()) === playbackDay);
-  }, [mapFlights, playbackTs]);
+  }, [mapFlights, playbackTs, showAllPoints]);
 
   const playbackDate = useMemo(() => new Date(playbackTs), [playbackTs]);
 
@@ -200,7 +204,7 @@ export default function MapWithTimeline({
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
   return (
-    <>
+    <div className="flex-1 min-h-0 relative flex flex-col">
       <div
         ref={mapWrapRef}
         className="flex-1 min-h-0 relative bg-[var(--background)]"
@@ -210,10 +214,56 @@ export default function MapWithTimeline({
         <DroneMapClient
           flights={visibleFlights}
           overlayContainerRef={mapWrapRef}
+          mapViewMode={mapViewMode}
         />
       </div>
-      <div className="timeline-bar shrink-0 border-t border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] pl-[max(1rem,calc(min(50%,420px)+0.5rem))] pr-4 py-2.5 flex items-center gap-3 font-mono">
-        {/* Play button — primary control */}
+      {/* Timeline bar: fills space from right edge of filter panel to right edge of window */}
+      <div className="timeline-bar absolute bottom-4 left-[calc(1rem+min(380px,100vw-2rem)+0.5rem)] right-4 z-10 rounded-2xl border border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl px-4 py-2.5 flex items-center gap-3 font-mono">
+        {/* Toggle: Map view — Dots vs Heat map */}
+        <div className="shrink-0 flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
+          <button
+            type="button"
+            onClick={() => setMapViewMode("dots")}
+            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+              mapViewMode === "dots" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            Dots
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapViewMode("heatmap")}
+            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+              mapViewMode === "heatmap" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            Heat map
+          </button>
+        </div>
+
+        {/* Toggle: Timeline (single day) vs All data points */}
+        <div className="shrink-0 flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
+          <button
+            type="button"
+            onClick={() => setShowAllPoints(false)}
+            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+              !showAllPoints ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            Timeline
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAllPoints(true)}
+            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+              showAllPoints ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            All data
+          </button>
+        </div>
+
+        {/* Play button — primary control (only relevant in timeline mode) */}
         <button
           type="button"
           onClick={() => {
@@ -318,13 +368,13 @@ export default function MapWithTimeline({
         {/* Timestamp and context on the right */}
         <div className="shrink-0 flex flex-col items-end gap-0.5">
           <span className="text-sm font-medium text-[var(--foreground)] tabular-nums">
-            {formatLabel(playbackDate)}
+            {showAllPoints ? "All data" : formatLabel(playbackDate)}
           </span>
           <span className="text-[11px] text-[var(--muted)] tabular-nums">
             {visibleFlights.length} flights
           </span>
         </div>
       </div>
-    </>
+    </div>
   );
 }

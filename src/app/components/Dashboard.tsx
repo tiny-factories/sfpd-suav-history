@@ -73,8 +73,8 @@ const REASON_CANONICAL: Record<string, string> = {
   "suicidal subject": "Suicidal / crisis",
   "suicidal person.": "Suicidal / crisis",
   "suicide attempt": "Suicidal / crisis",
-  "suicide": "Suicidal / crisis",
-  "suicidal": "Suicidal / crisis",
+  suicide: "Suicidal / crisis",
+  suicidal: "Suicidal / crisis",
   // Wanted
   "wanted person": "Wanted person",
   "wanted subject": "Wanted person",
@@ -95,7 +95,7 @@ const REASON_CANONICAL: Record<string, string> = {
   "physical fight": "Fight",
   "fight no weapons": "Fight",
   // Shooting / shots fired
-  "shooting": "Shooting / shots fired",
+  shooting: "Shooting / shots fired",
   "shots fired": "Shooting / shots fired",
   "person shot": "Shooting / shots fired",
   "shooting investigation": "Shooting / shots fired",
@@ -109,17 +109,17 @@ const REASON_CANONICAL: Record<string, string> = {
   // Warrant
   "warrant arrest": "Warrant",
   "warrant service": "Warrant",
-  "warrant": "Warrant",
+  warrant: "Warrant",
   "arrest warrant": "Warrant",
   // Trespassing
-  "trespasser": "Trespassing",
-  "trespassing": "Trespassing",
+  trespasser: "Trespassing",
+  trespassing: "Trespassing",
   "person trespassing": "Trespassing",
-  "tresspasser": "Trespassing",
+  tresspasser: "Trespassing",
   // Vandalism
-  "vandalism": "Vandalism",
+  vandalism: "Vandalism",
   "malicious mischief": "Vandalism",
-  "graffiti": "Vandalism",
+  graffiti: "Vandalism",
   // Missing person
   "missing person": "Missing person",
   "missing person at risk": "Missing person",
@@ -148,14 +148,14 @@ const REASON_CANONICAL: Record<string, string> = {
   // Stolen vehicle (already merged by case; ensure one label)
   "stolen vehicle": "Stolen vehicle",
   // Burglary (non-auto)
-  "burglary": "Burglary",
+  burglary: "Burglary",
   // Reckless / stunt
   "stunt driving": "Stunt driving",
   "reckless driving": "Reckless driving",
   // Fire
-  "fire": "Fire",
+  fire: "Fire",
   "illegal fireworks": "Fireworks",
-  "fireworks": "Fireworks",
+  fireworks: "Fireworks",
 };
 
 export default function Dashboard({
@@ -178,16 +178,27 @@ export default function Dashboard({
     }
   }, [flights.length, fullExtent.minTs, fullExtent.maxTs]);
 
-  const handleTimelineRangeChange = useCallback((startTs: number, endTs: number) => {
-    setRangeStartTs(startTs);
-    setRangeEndTs(endTs);
-  }, []);
+  const handleTimelineRangeChange = useCallback(
+    (startTs: number, endTs: number) => {
+      setRangeStartTs(startTs);
+      setRangeEndTs(endTs);
+    },
+    [],
+  );
 
-  const [selectedReasons, setSelectedReasons] = useState<Set<string>>(new Set());
+  const [selectedReasons, setSelectedReasons] = useState<Set<string>>(
+    new Set(),
+  );
   const [showAllReasons, setShowAllReasons] = useState(false);
-  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<Set<string>>(new Set());
-  const [selectedDistricts, setSelectedDistricts] = useState<Set<string>>(new Set());
-  const [selectedDurations, setSelectedDurations] = useState<Set<string>>(new Set());
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<
+    Set<string>
+  >(new Set());
+  const [selectedDistricts, setSelectedDistricts] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedDurations, setSelectedDurations] = useState<Set<string>>(
+    new Set(),
+  );
 
   const toggleReason = useCallback((r: string) => {
     setSelectedReasons((prev) => {
@@ -223,7 +234,8 @@ export default function Dashboard({
   }, []);
 
   const dateFilteredFlights = useMemo(() => {
-    if (flights.length === 0 || rangeStartTs <= 0 || rangeEndTs <= 0) return flights;
+    if (flights.length === 0 || rangeStartTs <= 0 || rangeEndTs <= 0)
+      return flights;
     return flights.filter((f) => {
       const t = new Date(f.date).getTime();
       return t >= rangeStartTs && t <= rangeEndTs;
@@ -237,10 +249,8 @@ export default function Dashboard({
   }, []);
 
   const allReasonsWithCount = useMemo(() => {
-    const byCountKey: Record<
-      string,
-      { total: number; displayLabel: string }
-    > = {};
+    const byCountKey: Record<string, { total: number; displayLabel: string }> =
+      {};
     for (const f of dateFilteredFlights) {
       const raw = (f.reason_for_flight || "").trim();
       if (!raw) continue;
@@ -255,7 +265,9 @@ export default function Dashboard({
       }
     }
     return Object.values(byCountKey)
-      .map(({ displayLabel, total }) => [displayLabel, total] as [string, number])
+      .map(
+        ({ displayLabel, total }) => [displayLabel, total] as [string, number],
+      )
       .sort((a, b) => b[1] - a[1]);
   }, [dateFilteredFlights, getCanonicalReason]);
 
@@ -267,8 +279,11 @@ export default function Dashboard({
       .slice(0, TOP_REASON_CAP);
   }, [allReasonsWithCount]);
 
-  const reasonsToShow = showAllReasons ? allReasonsWithCount : topReasonsWithCount;
-  const hasMoreReasons = allReasonsWithCount.length > topReasonsWithCount.length;
+  const reasonsToShow = showAllReasons
+    ? allReasonsWithCount
+    : topReasonsWithCount;
+  const hasMoreReasons =
+    allReasonsWithCount.length > topReasonsWithCount.length;
 
   const neighborhoodsWithCount = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -290,7 +305,11 @@ export default function Dashboard({
 
   const DURATION_BUCKETS = [
     { id: "short", label: "≤15 min", test: (m: number) => m <= 15 },
-    { id: "medium", label: "15–60 min", test: (m: number) => m > 15 && m <= 60 },
+    {
+      id: "medium",
+      label: "15–60 min",
+      test: (m: number) => m > 15 && m <= 60,
+    },
     { id: "long", label: ">60 min", test: (m: number) => m > 60 },
   ] as const;
 
@@ -309,31 +328,34 @@ export default function Dashboard({
     let out = dateFilteredFlights;
     if (selectedReasons.size > 0) {
       const selectedNormalized = new Set(
-        [...selectedReasons].map(normalizeReason)
+        [...selectedReasons].map(normalizeReason),
       );
       out = out.filter((f) =>
         selectedNormalized.has(
-          normalizeReason(getCanonicalReason(f.reason_for_flight ?? ""))
-        )
+          normalizeReason(getCanonicalReason(f.reason_for_flight ?? "")),
+        ),
       );
     }
     if (selectedNeighborhoods.size > 0) {
       out = out.filter(
         (f) =>
-          (f.analysis_neighborhood && selectedNeighborhoods.has(f.analysis_neighborhood)) ||
-          (f.analysis_neighborhood === null && selectedNeighborhoods.has("Unknown"))
+          (f.analysis_neighborhood &&
+            selectedNeighborhoods.has(f.analysis_neighborhood)) ||
+          (f.analysis_neighborhood === null &&
+            selectedNeighborhoods.has("Unknown")),
       );
     }
     if (selectedDistricts.size > 0) {
       out = out.filter(
-        (f) => f.supervisor_district && selectedDistricts.has(f.supervisor_district)
+        (f) =>
+          f.supervisor_district && selectedDistricts.has(f.supervisor_district),
       );
     }
     if (selectedDurations.size > 0) {
       out = out.filter((f) => {
         const m = Number(f.flight_duration_minutes) || 0;
         return DURATION_BUCKETS.some(
-          (b) => selectedDurations.has(b.id) && b.test(m)
+          (b) => selectedDurations.has(b.id) && b.test(m),
         );
       });
     }
@@ -384,8 +406,8 @@ export default function Dashboard({
           </div>
         </main>
 
-        {/* Floating filter panel: card-style over the map */}
-        <aside className="absolute left-4 top-4 z-10 w-[min(380px,calc(100vw-2rem))] max-h-[calc(100vh-6rem)] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] overflow-hidden shadow-xl">
+        {/* Filter panel: full height with consistent margin (top/bottom match left) */}
+        <aside className="absolute left-4 top-4 bottom-4 z-10 w-[min(380px,calc(100vw-2rem))] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] overflow-hidden shadow-xl">
           <div className="shrink-0 p-4 border-b border-[var(--border)]">
             <h1 className="text-lg font-semibold text-[var(--foreground)] tracking-tight flex items-center gap-2">
               <Plane size={18} className={iconClass} aria-hidden />
@@ -401,163 +423,167 @@ export default function Dashboard({
             </a>
           </div>
 
-        {/* Tiles + filters: scrollable */}
-        <div className="flex-1 p-4 overflow-y-auto min-h-0">
-          <h2 className="text-sm font-medium text-[var(--foreground)] mb-3 tracking-tight flex items-center gap-2">
-            <BarChart3 size={iconSize} className={iconClass} aria-hidden />
-            Summary
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/5 p-3">
-              <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
-                Total flights
-              </p>
-              <p className="text-2xl font-semibold text-[var(--foreground)] mt-0.5 tabular-nums">
-                {tileStats.total.toLocaleString()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--accent)] p-3 text-white">
-              <p className="text-[11px] uppercase tracking-wide text-white/80">
-                Total flight time
-              </p>
-              <p className="text-2xl font-semibold mt-0.5 tabular-nums">
-                {Math.round(tileStats.totalMinutes / 60)}h
-              </p>
-              <p className="text-xs text-white/70 tabular-nums">
-                {tileStats.totalMinutes.toLocaleString()} min
-              </p>
-            </div>
-            {dateRange && (
-              <div className="col-span-2 rounded-lg border border-[var(--border)] bg-[var(--card-dark)] p-3 text-white">
-                <p className="text-[11px] uppercase tracking-wide text-white/70">
-                  Date range
+          {/* Tiles + filters: scrollable */}
+          <div className="flex-1 p-4 overflow-y-auto min-h-0">
+            <h2 className="text-sm font-medium text-[var(--foreground)] mb-3 tracking-tight flex items-center gap-2">
+              <BarChart3 size={iconSize} className={iconClass} aria-hidden />
+              Summary
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/5 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+                  Total flights
                 </p>
-                <p className="text-sm mt-0.5 tabular-nums">
-                  {dateRange.from} → {dateRange.to}
+                <p className="text-2xl font-semibold text-[var(--foreground)] mt-0.5 tabular-nums">
+                  {tileStats.total.toLocaleString()}
                 </p>
               </div>
-            )}
-            <div className="col-span-2">
-              <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
-                <Tag size={iconSize} className={iconClass} aria-hidden />
-                Top reasons
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {reasonsToShow.map(([r, count]) => {
-                  const selected = selectedReasons.has(r);
-                  return (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => toggleReason(r)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
-                        selected
-                          ? "bg-[var(--accent)] text-white hover:opacity-90"
-                          : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
-                      }`}
-                    >
-                      {r} · {count.toLocaleString()}
-                    </button>
-                  );
-                })}
-                {hasMoreReasons && !showAllReasons && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllReasons(true)}
-                    className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
-                  >
-                    More +
-                  </button>
-                )}
-                {showAllReasons && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllReasons(false)}
-                    className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
-                  >
-                    Less
-                  </button>
-                )}
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--accent)] p-3 text-white">
+                <p className="text-[11px] uppercase tracking-wide text-white/80">
+                  Total flight time
+                </p>
+                <p className="text-2xl font-semibold mt-0.5 tabular-nums">
+                  {Math.round(tileStats.totalMinutes / 60)}h
+                </p>
+                <p className="text-xs text-white/70 tabular-nums">
+                  {tileStats.totalMinutes.toLocaleString()} min
+                </p>
               </div>
-            </div>
-            <div className="col-span-2">
-              <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
-                <MapPin size={iconSize} className={iconClass} aria-hidden />
-                Top neighborhoods
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {neighborhoodsWithCount.map(([n, count]) => {
-                  const selected = selectedNeighborhoods.has(n);
-                  return (
+              {dateRange && (
+                <div className="col-span-2 rounded-lg border border-[var(--border)] bg-[var(--card-dark)] p-3 text-white">
+                  <p className="text-[11px] uppercase tracking-wide text-white/70">
+                    Date range
+                  </p>
+                  <p className="text-sm mt-0.5 tabular-nums">
+                    {dateRange.from} → {dateRange.to}
+                  </p>
+                </div>
+              )}
+              <div className="col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
+                  <Tag size={iconSize} className={iconClass} aria-hidden />
+                  Top reasons
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {reasonsToShow.map(([r, count]) => {
+                    const selected = selectedReasons.has(r);
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => toggleReason(r)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
+                          selected
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
+                        }`}
+                      >
+                        {r} · {count.toLocaleString()}
+                      </button>
+                    );
+                  })}
+                  {hasMoreReasons && !showAllReasons && (
                     <button
-                      key={n}
                       type="button"
-                      onClick={() => toggleNeighborhood(n)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
-                        selected
-                          ? "bg-[var(--accent)] text-white hover:opacity-90"
-                          : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
-                      }`}
+                      onClick={() => setShowAllReasons(true)}
+                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
                     >
-                      {n} · {count.toLocaleString()}
+                      More +
                     </button>
-                  );
-                })}
+                  )}
+                  {showAllReasons && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllReasons(false)}
+                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                    >
+                      Less
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="col-span-2">
-              <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
-                <Building2 size={iconSize} className={iconClass} aria-hidden />
-                Supervisor district
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {districtsWithCount.map(([d, count]) => {
-                  const selected = selectedDistricts.has(d);
-                  const label = d === "—" ? "Unknown" : `District ${d}`;
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => toggleDistrict(d)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
-                        selected
-                          ? "bg-[var(--accent)] text-white hover:opacity-90"
-                          : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
-                      }`}
-                    >
-                      {label} · {count.toLocaleString()}
-                    </button>
-                  );
-                })}
+              <div className="col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
+                  <MapPin size={iconSize} className={iconClass} aria-hidden />
+                  Top neighborhoods
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {neighborhoodsWithCount.map(([n, count]) => {
+                    const selected = selectedNeighborhoods.has(n);
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => toggleNeighborhood(n)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
+                          selected
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
+                        }`}
+                      >
+                        {n} · {count.toLocaleString()}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div className="col-span-2">
-              <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
-                <Clock size={iconSize} className={iconClass} aria-hidden />
-                Flight duration
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {durationsWithCount.map(({ id, label, count }) => {
-                  const selected = selectedDurations.has(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggleDuration(id)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
-                        selected
-                          ? "bg-[var(--accent)] text-white hover:opacity-90"
-                          : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
-                      }`}
-                    >
-                      {label} · {count.toLocaleString()}
-                    </button>
-                  );
-                })}
+              <div className="col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
+                  <Building2
+                    size={iconSize}
+                    className={iconClass}
+                    aria-hidden
+                  />
+                  Supervisor district
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {districtsWithCount.map(([d, count]) => {
+                    const selected = selectedDistricts.has(d);
+                    const label = d === "—" ? "Unknown" : `District ${d}`;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => toggleDistrict(d)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
+                          selected
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
+                        }`}
+                      >
+                        {label} · {count.toLocaleString()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
+                  <Clock size={iconSize} className={iconClass} aria-hidden />
+                  Flight duration
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {durationsWithCount.map(({ id, label, count }) => {
+                    const selected = selectedDurations.has(id);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => toggleDuration(id)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
+                          selected
+                            ? "bg-[var(--accent)] text-white hover:opacity-90"
+                            : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--accent)]"
+                        }`}
+                      >
+                        {label} · {count.toLocaleString()}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </aside>
       </div>
 
