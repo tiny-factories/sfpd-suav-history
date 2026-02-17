@@ -12,10 +12,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const title = "SFPD Drone Flight Logs | Map";
+const description =
+  "Map of San Francisco Police Department small Uncrewed Aerial Vehicle (sUAS) flight logs from DataSF.";
+
 export const metadata: Metadata = {
-  title: "SFPD Drone Flight Logs | Map",
-  description:
-    "Map of San Francisco Police Department small Uncrewed Aerial Vehicle (sUAS) flight logs from DataSF.",
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    type: "website",
+    siteName: "SFPD Drone Flight Logs",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({
