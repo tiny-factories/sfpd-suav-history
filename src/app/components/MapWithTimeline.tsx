@@ -14,11 +14,10 @@ const DroneMapClient = dynamic(() => import("./DroneMapClient"), {
 });
 
 function formatLabel(d: Date): string {
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${year}-${month}-${day}`;
 }
 
 /** Start of day (midnight) for a timestamp, for same-day comparison */
@@ -50,6 +49,8 @@ export default function MapWithTimeline({
   const [playbackTs, setPlaybackTs] = useState(maxTs);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [playSpeed, setPlaySpeed] = useState(0.5);
+  const PLAY_SPEEDS = [0.25, 0.5, 0.75, 1] as const;
   const rangeRef = useRef({ rangeStartTs, rangeEndTs });
   rangeRef.current = { rangeStartTs, rangeEndTs };
 
@@ -77,7 +78,7 @@ export default function MapWithTimeline({
   // Advance timeline when playing; loop within range when loop is on
   useEffect(() => {
     if (!isPlaying || playEnd <= playStart) return;
-    const step = Math.max(1, (playEnd - playStart) / 500);
+    const step = Math.max(1, (playEnd - playStart) / 500) * playSpeed;
     const id = setInterval(() => {
       setPlaybackTs((t) => {
         const { rangeStartTs: rs, rangeEndTs: re } = rangeRef.current;
@@ -93,7 +94,7 @@ export default function MapWithTimeline({
       });
     }, 40);
     return () => clearInterval(id);
-  }, [isPlaying, loop, playStart, playEnd]);
+  }, [isPlaying, loop, playStart, playEnd, playSpeed]);
 
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -297,6 +298,23 @@ export default function MapWithTimeline({
           />
           <span className="text-[11px] text-[var(--muted)]">Loop</span>
         </label>
+
+        {/* Playback speed */}
+        <div className="shrink-0 flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
+          {PLAY_SPEEDS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setPlaySpeed(s)}
+              className={`px-2 py-1 text-[11px] font-medium rounded-md transition-colors tabular-nums ${
+                playSpeed === s ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+              title={`Playback speed ${s}×`}
+            >
+              {s}×
+            </button>
+          ))}
+        </div>
 
         {/* Waveform timeline with draggable in/out handles */}
         <div className="flex-1 min-w-0 flex items-center gap-2">
