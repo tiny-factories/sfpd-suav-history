@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { ChartScatter, Flame } from "lucide-react";
 import type { DroneFlightWithCoords } from "@/lib/sfpd-flights";
 
 const DroneMapClient = dynamic(() => import("./DroneMapClient"), {
@@ -48,8 +49,9 @@ export default function MapWithTimeline({
 
   const [playbackTs, setPlaybackTs] = useState(maxTs);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [loop, setLoop] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(0.5);
+  const playSpeedRef = useRef(playSpeed);
+  playSpeedRef.current = playSpeed;
   const PLAY_SPEEDS = [0.25, 0.5, 0.75, 1] as const;
   const rangeRef = useRef({ rangeStartTs, rangeEndTs });
   rangeRef.current = { rangeStartTs, rangeEndTs };
@@ -75,26 +77,27 @@ export default function MapWithTimeline({
   const playStart = rangeStartTs;
   const playEnd = rangeEndTs;
 
-  // Advance timeline when playing; loop within range when loop is on
+  // Advance timeline when playing. Use refs so we always see latest range/speed.
   useEffect(() => {
-    if (!isPlaying || playEnd <= playStart) return;
-    const step = Math.max(1, (playEnd - playStart) / 500) * playSpeed;
+    if (!isPlaying) return;
     const id = setInterval(() => {
+      const { rangeStartTs: rs, rangeEndTs: re } = rangeRef.current;
+      if (re <= rs) return;
+      const speed = playSpeedRef.current;
+      const step = Math.max(1, ((re - rs) / 500) * speed);
       setPlaybackTs((t) => {
-        const { rangeStartTs: rs, rangeEndTs: re } = rangeRef.current;
+        const { rangeStartTs: rs2, rangeEndTs: re2 } = rangeRef.current;
+        if (re2 <= rs2) return t;
         const next = t + step;
-        if (next >= re) {
-          if (loop) {
-            return rs;
-          }
+        if (next >= re2) {
           setIsPlaying(false);
-          return re;
+          return re2;
         }
         return next;
       });
     }, 40);
     return () => clearInterval(id);
-  }, [isPlaying, loop, playStart, playEnd, playSpeed]);
+  }, [isPlaying]);
 
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -218,53 +221,63 @@ export default function MapWithTimeline({
           mapViewMode={mapViewMode}
         />
       </div>
-      {/* Timeline bar: fills space from right edge of filter panel to right edge of window */}
-      <div className="timeline-bar absolute bottom-4 left-[calc(1rem+min(380px,100vw-2rem)+0.5rem)] right-4 z-10 rounded-2xl border border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl px-4 py-2.5 flex items-center gap-3 font-mono">
-        {/* Toggle: Map view — Dots vs Heat map */}
-        <div className="shrink-0 flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
-          <button
-            type="button"
-            onClick={() => setMapViewMode("dots")}
-            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-              mapViewMode === "dots" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Dots
-          </button>
-          <button
-            type="button"
-            onClick={() => setMapViewMode("heatmap")}
-            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-              mapViewMode === "heatmap" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Heat map
-          </button>
+      {/* Timeline bar: single row, labels above Map / Scope / Speed */}
+      <div className="timeline-bar absolute bottom-4 left-[calc(1rem+min(380px,100vw-2rem)+0.5rem)] right-4 z-10 rounded-2xl border border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl px-4 py-3 flex items-end gap-3 font-mono">
+        {/* Map — label above, Dots/Heat inline */}
+        <div className="shrink-0 flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">Map</span>
+          <div className="flex items-center rounded-lg bg-[var(--background)] dark:bg-white/10 p-0.5">
+            <button
+              type="button"
+              onClick={() => setMapViewMode("dots")}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+                mapViewMode === "dots" ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+              title="Show flights as dots"
+            >
+              <ChartScatter size={14} strokeWidth={2} aria-hidden />
+              <span>Dots</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapViewMode("heatmap")}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+                mapViewMode === "heatmap" ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+              title="Show heatmap"
+            >
+              <Flame size={14} strokeWidth={2} aria-hidden />
+              <span>Heat</span>
+            </button>
+          </div>
         </div>
 
-        {/* Toggle: Timeline (single day) vs All data points */}
-        <div className="shrink-0 flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
-          <button
-            type="button"
-            onClick={() => setShowAllPoints(false)}
-            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-              !showAllPoints ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Timeline
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowAllPoints(true)}
-            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-              showAllPoints ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            All data
-          </button>
+        {/* Scope — label above, Timeline/All data inline */}
+        <div className="shrink-0 flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">Scope</span>
+          <div className="flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
+            <button
+              type="button"
+              onClick={() => setShowAllPoints(false)}
+              className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+                !showAllPoints ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Timeline
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAllPoints(true)}
+              className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+                showAllPoints ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              All data
+            </button>
+          </div>
         </div>
 
-        {/* Play button — primary control (only relevant in timeline mode) */}
+        {/* Play button */}
         <button
           type="button"
           onClick={() => {
@@ -273,51 +286,43 @@ export default function MapWithTimeline({
             }
             setIsPlaying((p) => !p);
           }}
-          className="timeline-play-btn shrink-0 w-11 h-11 rounded-full bg-[var(--accent)] text-white hover:opacity-90 flex items-center justify-center transition-transform active:scale-95 shadow-md"
+          className="timeline-play-btn shrink-0 w-9 h-9 rounded-full bg-[var(--accent)] text-white hover:opacity-90 flex items-center justify-center transition-transform active:scale-95 shadow-md"
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <rect x="6" y="4" width="4" height="16" rx="1" />
               <rect x="14" y="4" width="4" height="16" rx="1" />
             </svg>
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="ml-0.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="ml-0.5">
               <path d="M8 5v14l11-7z" />
             </svg>
           )}
         </button>
 
-        {/* Loop toggle — compact */}
-        <label className="flex items-center gap-1.5 cursor-pointer shrink-0" title="Loop range">
-          <input
-            type="checkbox"
-            checked={loop}
-            onChange={(e) => setLoop(e.target.checked)}
-            className="rounded border-[var(--border)] text-[var(--accent)] focus:ring-[var(--accent)]"
-          />
-          <span className="text-[11px] text-[var(--muted)]">Loop</span>
-        </label>
-
-        {/* Playback speed */}
-        <div className="shrink-0 flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
-          {PLAY_SPEEDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setPlaySpeed(s)}
-              className={`px-2 py-1 text-[11px] font-medium rounded-md transition-colors tabular-nums ${
-                playSpeed === s ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-              title={`Playback speed ${s}×`}
-            >
-              {s}×
-            </button>
-          ))}
+        {/* Speed — label above, dropdown inline */}
+        <div className="shrink-0 flex flex-col gap-1">
+          <label htmlFor="timeline-speed" className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
+            Speed
+          </label>
+          <select
+            id="timeline-speed"
+            value={playSpeed}
+            onChange={(e) => setPlaySpeed(Number(e.target.value))}
+            className="rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] text-[11px] font-medium py-1.5 pl-2 pr-6 tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            title="Playback speed"
+          >
+            {PLAY_SPEEDS.map((s) => (
+              <option key={s} value={s}>
+                {s}×
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Waveform timeline with draggable in/out handles */}
-        <div className="flex-1 min-w-0 flex items-center gap-2">
+        <div className="flex-1 min-w-0 flex flex-col justify-end">
           <div
             ref={trackRef}
             role="slider"
@@ -373,7 +378,7 @@ export default function MapWithTimeline({
             </div>
             {/* Playhead */}
             <div
-              className="timeline-handle absolute top-0 bottom-0 w-0.5 -ml-px z-20 pointer-events-auto cursor-ew-resize bg-[var(--foreground)] dark:bg-white shadow-lg"
+              className="timeline-handle absolute top-0 bottom-0 w-0.5 -ml-px z-20 pointer-events-auto cursor-ew-resize bg-[var(--accent)] shadow-lg"
               style={{ left: `${playheadPct}%` }}
               onMouseDown={(e) => {
                 e.stopPropagation();

@@ -189,7 +189,6 @@ export default function Dashboard({
   const [selectedReasons, setSelectedReasons] = useState<Set<string>>(
     new Set(),
   );
-  const [showAllReasons, setShowAllReasons] = useState(false);
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<
     Set<string>
   >(new Set());
@@ -272,20 +271,20 @@ export default function Dashboard({
   }, [dateFilteredFlights, getCanonicalReason]);
 
   const MIN_REASON_COUNT = 20;
-  const TOP_REASON_CAP = 20;
-  const topReasonsWithCount = useMemo(() => {
+  const TOP_N = 5;
+
+  const [expandReasons, setExpandReasons] = useState(false);
+  const [expandNeighborhoods, setExpandNeighborhoods] = useState(false);
+  const [expandDistricts, setExpandDistricts] = useState(false);
+  const [expandDurations, setExpandDurations] = useState(false);
+
+  const allReasonsFiltered = useMemo(() => {
     return allReasonsWithCount
       .filter(([, count]) => count >= MIN_REASON_COUNT)
-      .slice(0, TOP_REASON_CAP);
+      .sort((a, b) => b[1] - a[1]);
   }, [allReasonsWithCount]);
 
-  const reasonsToShow = showAllReasons
-    ? allReasonsWithCount
-    : topReasonsWithCount;
-  const hasMoreReasons =
-    allReasonsWithCount.length > topReasonsWithCount.length;
-
-  const neighborhoodsWithCount = useMemo(() => {
+  const allNeighborhoodsWithCount = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const f of dateFilteredFlights) {
       const n = f.analysis_neighborhood ?? "Unknown";
@@ -294,7 +293,7 @@ export default function Dashboard({
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   }, [dateFilteredFlights]);
 
-  const districtsWithCount = useMemo(() => {
+  const allDistrictsWithCount = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const f of dateFilteredFlights) {
       const d = f.supervisor_district ?? "—";
@@ -313,7 +312,7 @@ export default function Dashboard({
     { id: "long", label: ">60 min", test: (m: number) => m > 60 },
   ] as const;
 
-  const durationsWithCount = useMemo(() => {
+  const allDurationsWithCount = useMemo(() => {
     return DURATION_BUCKETS.map(({ id, label, test }) => {
       let count = 0;
       for (const f of dateFilteredFlights) {
@@ -321,7 +320,9 @@ export default function Dashboard({
         if (test(m)) count++;
       }
       return { id, label, count };
-    }).filter((d) => d.count > 0);
+    })
+      .filter((d) => d.count > 0)
+      .sort((a, b) => b.count - a.count);
   }, [dateFilteredFlights]);
 
   const formatCount = (n: number) =>
@@ -432,7 +433,7 @@ export default function Dashboard({
               <BarChart3 size={iconSize} className={iconClass} aria-hidden />
               Summary
             </h2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 gap-y-5">
               <div className="rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/5 p-2.5">
                 <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
                   Total flights
@@ -462,10 +463,10 @@ export default function Dashboard({
               <div className="col-span-2">
                 <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
                   <Tag size={iconSize} className={iconClass} aria-hidden />
-                  Top reasons
+                  Reasons
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {reasonsToShow.map(([r, count]) => {
+                  {(expandReasons ? allReasonsFiltered : allReasonsFiltered.slice(0, TOP_N)).map(([r, count]) => {
                     const selected = selectedReasons.has(r);
                     return (
                       <button
@@ -482,22 +483,13 @@ export default function Dashboard({
                       </button>
                     );
                   })}
-                  {hasMoreReasons && !showAllReasons && (
+                  {allReasonsFiltered.length > TOP_N && (
                     <button
                       type="button"
-                      onClick={() => setShowAllReasons(true)}
+                      onClick={() => setExpandReasons((e) => !e)}
                       className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
                     >
-                      More +
-                    </button>
-                  )}
-                  {showAllReasons && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllReasons(false)}
-                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
-                    >
-                      Less
+                      {expandReasons ? "Less" : `+${allReasonsFiltered.length - TOP_N} more`}
                     </button>
                   )}
                 </div>
@@ -505,10 +497,10 @@ export default function Dashboard({
               <div className="col-span-2">
                 <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-2 flex items-center gap-1.5">
                   <MapPin size={iconSize} className={iconClass} aria-hidden />
-                  Top neighborhoods
+                  Neighborhoods
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {neighborhoodsWithCount.map(([n, count]) => {
+                  {(expandNeighborhoods ? allNeighborhoodsWithCount : allNeighborhoodsWithCount.slice(0, TOP_N)).map(([n, count]) => {
                     const selected = selectedNeighborhoods.has(n);
                     return (
                       <button
@@ -525,6 +517,15 @@ export default function Dashboard({
                       </button>
                     );
                   })}
+                  {allNeighborhoodsWithCount.length > TOP_N && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandNeighborhoods((e) => !e)}
+                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                    >
+                      {expandNeighborhoods ? "Less" : `+${allNeighborhoodsWithCount.length - TOP_N} more`}
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="col-span-2">
@@ -537,7 +538,7 @@ export default function Dashboard({
                   Supervisor district
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {districtsWithCount.map(([d, count]) => {
+                  {(expandDistricts ? allDistrictsWithCount : allDistrictsWithCount.slice(0, TOP_N)).map(([d, count]) => {
                     const selected = selectedDistricts.has(d);
                     const label = d === "—" ? "Unknown" : `District ${d}`;
                     return (
@@ -555,6 +556,15 @@ export default function Dashboard({
                       </button>
                     );
                   })}
+                  {allDistrictsWithCount.length > TOP_N && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandDistricts((e) => !e)}
+                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                    >
+                      {expandDistricts ? "Less" : `+${allDistrictsWithCount.length - TOP_N} more`}
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="col-span-2">
@@ -563,7 +573,7 @@ export default function Dashboard({
                   Flight duration
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {durationsWithCount.map(({ id, label, count }) => {
+                  {(expandDurations ? allDurationsWithCount : allDurationsWithCount.slice(0, TOP_N)).map(({ id, label, count }) => {
                     const selected = selectedDurations.has(id);
                     return (
                       <button
@@ -580,6 +590,15 @@ export default function Dashboard({
                       </button>
                     );
                   })}
+                  {allDurationsWithCount.length > TOP_N && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandDurations((e) => !e)}
+                      className="rounded-full px-2.5 py-1 text-xs font-medium text-[var(--muted)] bg-[var(--background)] dark:bg-white/10 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                    >
+                      {expandDurations ? "Less" : `+${allDurationsWithCount.length - TOP_N} more`}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
