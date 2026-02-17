@@ -16,7 +16,15 @@ const title = "SFPD Drone Flight Logs | Map";
 const description =
   "Map of San Francisco Police Department small Uncrewed Aerial Vehicle (sUAS) flight logs from DataSF.";
 
+const openGraphImageAlt =
+  "SFPD Drone Flight Logs — Map of sUAS flight logs from DataSF";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"
+  ),
   title,
   description,
   openGraph: {
@@ -25,11 +33,20 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "SFPD Drone Flight Logs",
     locale: "en_US",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: openGraphImageAlt,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
+    images: ["/opengraph-image"],
   },
 };
 
