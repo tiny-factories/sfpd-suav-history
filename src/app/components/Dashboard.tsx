@@ -417,14 +417,9 @@ export default function Dashboard({
               <Plane size={18} className={iconClass} aria-hidden />
               SFPD Drone Flights
             </h1>
-            <a
-              href={dataSourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[var(--muted)] hover:text-[var(--accent)] hover:underline mt-0.5 inline-block"
-            >
-              DataSF
-            </a>
+            <p className="text-xs text-[var(--muted)] mt-1 leading-relaxed">
+              Interactive map of San Francisco Police Department small uncrewed aerial vehicle (sUAS) flight logs. Filter by reason, neighborhood, district, and duration.
+            </p>
           </div>
 
           {/* Tiles + filters: scrollable */}
@@ -451,11 +446,11 @@ export default function Dashboard({
                 </p>
               </div>
               {dateRange && (
-                <div className="col-span-2 rounded-lg border border-[var(--border)] bg-[var(--card-dark)] p-3 text-white">
-                  <p className="text-[11px] uppercase tracking-wide text-white/70">
+                <div className="col-span-2 rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/5 p-2.5">
+                  <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
                     Date range
                   </p>
-                  <p className="text-sm mt-0.5 tabular-nums">
+                  <p className="text-sm mt-0.5 tabular-nums text-[var(--foreground)]">
                     {dateRange.from} → {dateRange.to}
                   </p>
                 </div>
@@ -479,7 +474,7 @@ export default function Dashboard({
                             : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
                         }`}
                       >
-                        {r} · <span className="rounded px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {r} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -513,7 +508,7 @@ export default function Dashboard({
                             : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
                         }`}
                       >
-                        {n} · <span className="rounded px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {n} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -552,7 +547,7 @@ export default function Dashboard({
                             : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
                         }`}
                       >
-                        {label} · <span className="rounded px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {label} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
                       </button>
                     );
                   })}
@@ -586,7 +581,7 @@ export default function Dashboard({
                             : "bg-[var(--background)] dark:bg-white/10 text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)]"
                         }`}
                       >
-                        {label} · <span className="rounded px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
+                        {label} <span className="rounded-l rounded-r-full px-1.5 py-0.5 bg-[var(--muted)]/15 tabular-nums">{formatCount(count)}</span>
                       </button>
                     );
                   })}

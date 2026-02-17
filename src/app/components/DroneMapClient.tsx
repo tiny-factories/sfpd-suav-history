@@ -207,6 +207,11 @@ function MapHeatLayer({
 
 export type MapViewMode = "dots" | "heatmap";
 
+const TILE_URL_LIGHT =
+  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
+const TILE_URL_DARK =
+  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png";
+
 export default function DroneMapClient({
   flights,
   overlayContainerRef,
@@ -219,6 +224,15 @@ export default function DroneMapClient({
   const center: [number, number] = [37.7749, -122.4194];
 
   const [sfBoundaryRing, setSfBoundaryRing] = useState<[number, number][] | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const m = window.matchMedia("(prefers-color-scheme: dark)");
+    setDarkMode(m.matches);
+    const listener = () => setDarkMode(m.matches);
+    m.addEventListener("change", listener);
+    return () => m.removeEventListener("change", listener);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,7 +259,7 @@ export default function DroneMapClient({
       {sfBoundaryRing && <MapFadeMask boundaryRing={sfBoundaryRing} />}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+        url={darkMode ? TILE_URL_DARK : TILE_URL_LIGHT}
       />
       <FitBoundsToSF />
       {mapViewMode === "heatmap" ? (

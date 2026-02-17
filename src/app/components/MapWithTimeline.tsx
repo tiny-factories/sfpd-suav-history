@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { ChartScatter, Flame } from "lucide-react";
 import type { DroneFlightWithCoords } from "@/lib/sfpd-flights";
 
 const DroneMapClient = dynamic(() => import("./DroneMapClient"), {
@@ -223,31 +222,29 @@ export default function MapWithTimeline({
       </div>
       {/* Timeline bar: single row, labels above Map / Scope / Speed */}
       <div className="timeline-bar absolute bottom-4 left-[calc(1rem+min(380px,100vw-2rem)+0.5rem)] right-4 z-10 rounded-2xl border border-[var(--border)] bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl px-4 py-3 flex items-end gap-3 font-mono">
-        {/* Map — label above, Dots/Heat inline */}
+        {/* Map — same style as Scope: label above, text-only toggles */}
         <div className="shrink-0 flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">Map</span>
-          <div className="flex items-center rounded-lg bg-[var(--background)] dark:bg-white/10 p-0.5">
+          <div className="flex items-center rounded-lg border border-[var(--border)] bg-[var(--background)] dark:bg-white/10 p-0.5">
             <button
               type="button"
               onClick={() => setMapViewMode("dots")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-                mapViewMode === "dots" ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+                mapViewMode === "dots" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
               title="Show flights as dots"
             >
-              <ChartScatter size={14} strokeWidth={2} aria-hidden />
-              <span>Dots</span>
+              Dots
             </button>
             <button
               type="button"
               onClick={() => setMapViewMode("heatmap")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-                mapViewMode === "heatmap" ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+                mapViewMode === "heatmap" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
               title="Show heatmap"
             >
-              <Flame size={14} strokeWidth={2} aria-hidden />
-              <span>Heat</span>
+              Heat
             </button>
           </div>
         </div>
